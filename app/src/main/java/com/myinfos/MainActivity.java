@@ -36,6 +36,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
 
     class LoadContacts extends AsyncTask<Void, Void, Void> {
         String Response, strUrl;
-
         @Override
         protected Void doInBackground(Void... params) {
             strUrl = Services.url;
