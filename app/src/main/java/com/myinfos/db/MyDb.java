@@ -134,7 +134,42 @@ public class MyDb extends SQLiteOpenHelper {
                 contactList.add(contact);
             } while (cursor.moveToNext());
         }
+        db.close();
+        // return contact list
+        return contactList;
+    }
 
+
+    public List<InfoDetails> getAllContacts(String name) {
+        List<InfoDetails> contactList = new ArrayList<InfoDetails>();
+        // Select All Query
+        String selectQuery = "SELECT  * FROM " + CONTACTS_TABLE_NAME+ " where "+CONTACTS_COLUMN_FNAME+ " like '%"+name+"%' ";
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            do {
+                InfoDetails contact = new InfoDetails();
+                contact.setId(cursor.getString(0));
+                contact.setFname(cursor.getString(1));
+                contact.setLname(cursor.getString(2));
+                contact.setEmail(cursor.getString(3));
+                contact.setAddress(cursor.getString(4));
+                contact.setCity(cursor.getString(5));
+                contact.setArea(cursor.getString(6));
+                contact.setLandline(cursor.getString(7));
+                contact.setMobile(cursor.getString(8));
+                contact.setPincode(cursor.getString(9));
+                contact.setLatitude(cursor.getString(10));
+                contact.setLongitude(cursor.getString(11));
+
+                // Adding contact to list
+                contactList.add(contact);
+            } while (cursor.moveToNext());
+        }
+        db.close();
         // return contact list
         return contactList;
     }
@@ -142,6 +177,7 @@ public class MyDb extends SQLiteOpenHelper {
     public void deleteAll() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("delete from " + CONTACTS_TABLE_NAME);
+        db.close();
     }
 
     // Getting contacts Count
@@ -149,9 +185,10 @@ public class MyDb extends SQLiteOpenHelper {
         String countQuery = "SELECT  * FROM " + CONTACTS_TABLE_NAME;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(countQuery, null);
+        int count=cursor.getCount();
         cursor.close();
-
+        db.close();
         // return count
-        return cursor.getCount();
+        return count;
     }
 }

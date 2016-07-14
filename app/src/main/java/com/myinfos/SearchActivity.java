@@ -1,60 +1,54 @@
 package com.myinfos;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.myinfos.adapter.ContactListAdapter;
 import com.myinfos.db.MyDb;
 import com.myinfos.models.InfoDetails;
-import com.myinfos.supports.ConnectionDetector;
 import com.myinfos.supports.OnItemClickListener;
-import com.myinfos.supports.Services;
-import com.myinfos.supports.WebServiceHandler;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-
+/**
+ * Created by admin on 14/07/2016.
+ */
+public class SearchActivity extends AppCompatActivity {
     private MyDb db;
     private ProgressBar progressBar;
     private TextView txtMsg;
     private RecyclerView contactListView;
+    private EditText edtSearch;
     private List<InfoDetails> infoDetailsList;
     private ContactListAdapter listAdapter;
-    private LoadContacts loadContacts;
     private static String[] PERMISSIONS = {Manifest.permission.CALL_PHONE};
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.search_activity);
         db = new MyDb(this);
         contactListView = (RecyclerView) findViewById(R.id.contact_list);
+        edtSearch=(EditText) findViewById(R.id.edt_name);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         txtMsg = (TextView) findViewById(R.id.txt_msg);
         contactListView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
@@ -62,78 +56,38 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             grantRuntimePermission();
         }
-        loadContacts();
 
+        loadAllList(0);
+        edtSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                loadAllList(1);
+            }
+        });
     }
 
-    private void loadContacts() {
-        if (ConnectionDetector.isConnectingToInternet(this)) {
-            txtMsg.setVisibility(View.GONE);
-            contactListView.setVisibility(View.GONE);
-            progressBar.setVisibility(View.VISIBLE);
-            loadContacts = new LoadContacts();
-            loadContacts.execute();
+
+
+
+
+    void loadAllList(int i){
+        if(i==0) {
+            infoDetailsList = db.getAllContacts();
         } else {
-            int count = db.getContactsCount();
-            if (count > 0) {
-                loadData();
-            } else {
-                Toast.makeText(MainActivity.this, "Internet Connection must for first use", Toast.LENGTH_SHORT).show();
-            }
+            infoDetailsList=db.getAllContacts(edtSearch.getText().toString());
         }
-    }
-
-
-    class LoadContacts extends AsyncTask<Void, Void, Void> {
-        String Response, strUrl;
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            strUrl = Services.url;
-            try {
-                Response = WebServiceHandler.executePost(strUrl, convertToJSONforDeviceRequest());
-                Log.e("WebService Response: ", "" + Response);
-                if (Response != null) {
-                    db.deleteAll();
-                    JSONObject object = new JSONObject(Response);
-                    JSONArray jsonArray = object.getJSONArray("Contacts");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject objects = jsonArray.getJSONObject(i);
-                        InfoDetails details = new InfoDetails();
-                        details.id = objects.getString("Id");
-                        details.fname = objects.getString("fname");
-                        details.lname = objects.getString("lname");
-                        details.email = objects.getString("email");
-                        details.mobile = objects.getString("mobile");
-                        details.landline = objects.getString("phone");
-                        details.city = objects.getString("city");
-                        details.area = objects.getString("area");
-                        details.address = objects.getString("address");
-                        details.latitude = objects.getString("latitude");
-                        details.longitude = objects.getString("longitude");
-                        details.pincode = objects.getString("pincode");
-                        db.addContact(details);
-                    }
-
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            loadData();
-
-        }
-    }
-
-    private void loadData(){
-        infoDetailsList = db.getAllContacts();
         if (infoDetailsList.size() > 0) {
-            listAdapter = new ContactListAdapter(MainActivity.this, infoDetailsList);
+            listAdapter = new ContactListAdapter(SearchActivity.this, infoDetailsList);
             listAdapter.SetOnItemClickListener(new OnItemClickListener() {
                 @Override
                 public void onItemClick(View view, int position) {
@@ -142,49 +96,13 @@ public class MainActivity extends AppCompatActivity {
             });
             contactListView.setAdapter(listAdapter);
             listAdapter.notifyDataSetChanged();
-            progressBar.setVisibility(View.GONE);
             contactListView.setVisibility(View.VISIBLE);
             txtMsg.setVisibility(View.GONE);
         } else {
-            progressBar.setVisibility(View.GONE);
             txtMsg.setVisibility(View.VISIBLE);
             contactListView.setVisibility(View.GONE);
         }
     }
-
-
-    private String convertToJSONforDeviceRequest() {
-        JSONObject jsonParam = new JSONObject();
-        try {
-            jsonParam.put("deviceType", "Android");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonParam.toString();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu, menu);//Menu Resource, Menu
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.sync) {
-            if (ConnectionDetector.isConnectingToInternet(this)) {
-                loadContacts();
-            } else {
-                Toast.makeText(MainActivity.this, "No internet Connection", Toast.LENGTH_SHORT).show();
-            }
-        }
-        if(item.getItemId()==R.id.search){
-            startActivity(new Intent(MainActivity.this,SearchActivity.class));
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
 
     void callPhoneIntent(int i){
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
@@ -196,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(phoneIntent);
         }
     }
+
 
     private void grantRuntimePermission() {
         for (String PERMISSION : PERMISSIONS) {
@@ -248,14 +167,5 @@ public class MainActivity extends AppCompatActivity {
         myAppSettings.addCategory(Intent.CATEGORY_DEFAULT);
         myAppSettings.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         this.startActivity(myAppSettings);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if(loadContacts!=null){
-            loadContacts.cancel(true);
-            loadContacts=null;
-        }
     }
 }
