@@ -51,6 +51,8 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
         holder.txtName.setText(dataList.get(i).getFname());
         if (i % 2 == 0) {
             holder.rootView.setBackgroundColor(mContext.getResources().getColor(R.color.light_gray));
+        } else {
+            holder.rootView.setBackgroundColor(Color.WHITE);
         }
 
         holder.itemImgCall.setOnClickListener(new View.OnClickListener() {
