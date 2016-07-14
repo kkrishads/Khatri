@@ -86,6 +86,7 @@ public class SwipeFragment extends Fragment {
                 imgMobCall.setVisibility(View.GONE);
             }
             setValues(txtPinCode, details.pincode);
+            imgLocate.setOnClickListener(btnListener);
             setValues(txtArea, details.area);
             setValues(txtCity, details.city);
             setValues(txtFname, details.fname);
@@ -106,20 +107,26 @@ public class SwipeFragment extends Fragment {
         public void onClick(View v) {
             if (v == imgLandCall) {
                 Intent phoneIntent = new Intent(Intent.ACTION_CALL);
-                phoneIntent.setData(Uri.parse("tel:"+ details.landline));
+                phoneIntent.setData(Uri.parse("tel:" + details.landline));
                 startActivity(phoneIntent);
             } else if (v == imgLocate) {
-                if(details.latitude!=null && !details.latitude.isEmpty() && details.longitude!=null && !details.longitude.isEmpty()){
-                    String uri = String.format(Locale.ENGLISH, "geo:%f,%f", details.latitude, details.longitude);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                if (details.latitude != null && !details.latitude.isEmpty() && details.longitude != null && !details.longitude.isEmpty()) {
+//                    String uri = String.format(Locale.ENGLISH, "geo:<"+details.latitude+"> ,< "+ details.longitude+">");
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("geo:<" + details.latitude  + ">,<" + details.longitude + ">?q=<" + details.latitude  + ">,<" + details.longitude + ">"));
                     startActivity(intent);
                 } else {
-                    Toast.makeText(getActivity(),"Latitude and Longitude not found",Toast.LENGTH_SHORT).show();
+
+                    String uri = "http://maps.google.com/maps?q=" + details.getArea().toString().trim().replaceAll("&", "and").replaceAll(" ", "+") + ", "
+                            + details.getCity().toString().trim().replaceAll(" ", "+");
+                    Intent intent = new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri));
+                    intent.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
+                    getActivity().startActivity(intent);
+
                 }
 
             } else if (v == imgMobCall) {
                 Intent phoneIntent = new Intent(Intent.ACTION_CALL);
-                phoneIntent.setData(Uri.parse("tel:"+ details.mobile));
+                phoneIntent.setData(Uri.parse("tel:" + details.mobile));
                 startActivity(phoneIntent);
             } else if (v == imgMsg) {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", details.mobile, null)));
